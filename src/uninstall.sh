@@ -8,58 +8,58 @@ then
 
 fi
 
-if [ -d $HOME/code/maestro ]
+if [ -d $HOME/code/${folder} ]
 then
 	echo ""
-	echo "chown $USER:$GROUP $HOME/code/maestro -R"
-	sudo chown $USER:$GROUP $HOME/code/maestro -R
+	echo "chown $USER:$GROUP $HOME/code/${folder} -R"
+	sudo chown $USER:$GROUP $HOME/code/${folder} -R
 
 	echo ""
-	echo "Remove $HOME/code/maestro"
-	sudo rm $HOME/code/maestro -rf
+	echo "Remove $HOME/code/${folder}"
+	sudo rm $HOME/code/${folder} -rf
 fi
 
-if [ -h /var/www/html/maestro ]
+if [ -h /var/www/html/${folder} ]
 then
 	echo ""
-	echo "chown $USER:$GROUP /var/www/html/maestro -R"
-	sudo chown $USER:$GROUP /var/www/html/maestro -R
+	echo "chown $USER:$GROUP /var/www/html/${folder} -R"
+	sudo chown $USER:$GROUP /var/www/html/${folder} -R
 
 	echo ""
-	echo "Remove /var/www/html/maestro"
-	sudo rm /var/www/html/maestro -rf
+	echo "Remove /var/www/html/${folder}"
+	sudo rm /var/www/html/${folder} -rf
 fi
 
 echo ""
 echo "Drop Database"
-echo "DROP DATABASE maestro;" | mysql -u root -p
+echo "DROP DATABASE ${folder};" | mysql -u root -p
 
-if [ -h /etc/nginx/sites-enabled/dev.maestro.allapi.io.conf ]
+if [ -h /etc/nginx/sites-enabled/dev.${folder}.allapi.io.conf ]
 then
 	echo ""
-	echo "Remove /etc/nginx/sites-enabled/dev.maestro.allapi.io.conf"
-	sudo rm /etc/nginx/sites-enabled/dev.maestro.allapi.io.conf -rf
+	echo "Remove /etc/nginx/sites-enabled/dev.${folder}.allapi.io.conf"
+	sudo rm /etc/nginx/sites-enabled/dev.${folder}.allapi.io.conf -rf
 fi
 
-if [ -f /etc/nginx/sites-available/dev.maestro.allapi.io.conf ]
+if [ -f /etc/nginx/sites-available/dev.${folder}.allapi.io.conf ]
 then
 	echo ""
-	echo "Remove /etc/nginx/sites-available/dev.maestro.allapi.io.conf"
-	sudo rm /etc/nginx/sites-available/dev.maestro.allapi.io.conf -rf
+	echo "Remove /etc/nginx/sites-available/dev.${folder}.allapi.io.conf"
+	sudo rm /etc/nginx/sites-available/dev.${folder}.allapi.io.conf -rf
 fi
 
-if [ -f /var/log//nginx/dev.maestro.allapi.io.access.log ]
+if [ -f /var/log//nginx/dev.${folder}.allapi.io.access.log ]
 then
 	echo ""
-	echo "Remove dev.maestro.allapi.io.access.log"
-	sudo rm /var/log//nginx/dev.maestro.allapi.io.access.log
+	echo "Remove dev.${folder}.allapi.io.access.log"
+	sudo rm /var/log//nginx/dev.${folder}.allapi.io.access.log
 fi
 
-if [ -f /var/log//nginx/dev.maestro.allapi.io.error.log ]
+if [ -f /var/log//nginx/dev.${folder}.allapi.io.error.log ]
 then
 	echo ""
-	echo "Remove dev.maestro.allapi.io.error.log"
-	sudo rm /var/log//nginx/dev.maestro.allapi.io.error.log
+	echo "Remove dev.${folder}.allapi.io.error.log"
+	sudo rm /var/log//nginx/dev.${folder}.allapi.io.error.log
 fi
 
 sudo sed -i -e 's/127.0.0.1    dev.${folder}.allapi.io//g' /etc/hosts
@@ -74,6 +74,6 @@ echo ""
 echo "Reload Nginx"
 sudo systemctl reload nginx.service
 
-# echo "127.0.0.1    dev.maestro.allapi.io" | sudo tee -a /etc/hosts
+# echo "127.0.0.1    dev.${folder}.allapi.io" | sudo tee -a /etc/hosts
 
 cd $HOME
