@@ -40,6 +40,8 @@ maestroInstall()
 maestroUninstall()
 {
 	clearVariables
+	unset maestrohost
+	unset maestrotoken
 	if [ -d $HOME/code/maestro ]
 	then
 		echo "Deseja desinstallar o Maestro? [Y/n] "
@@ -131,7 +133,6 @@ clearVariables()
 	unset folder
 	unset option
 	unset maestroOp
-	unset maestrotoken
 	unset configPath
 	unset pathProj
 	unset DB_DATABASE
@@ -148,10 +149,11 @@ menuProd(){
 	echo ""
 	echo "Escolha um produto: "
 	echo ""
-	echo " [a] Maestro"
-	echo " [b] Global"
-	echo " [c] InfinityPay"
-	echo " [d] B4U"
+	echo " [a] InfinityPay"
+	echo " [b] B4U"
+	echo " [c] Suppliers"
+	echo " [d] Maestro"
+	echo " [e] Global"
 	echo ""
 	echo " [z] Sair"
 
@@ -160,6 +162,18 @@ menuProd(){
 
 	case $option in
 		"a")
+			prod=InfinityPay
+			options
+			;;
+		"b")
+			prod=B4U
+			options
+			;;
+		"c")
+			prod=Suppliers
+			options
+			;;
+		"d")
 			prod=Maestro
 			clear
 			header
@@ -172,16 +186,8 @@ menuProd(){
 				menuProd
 			fi
 			;;
-		"b")
+		"e")
 			prod=Global
-			options
-			;;
-		"c")
-			prod=InfinityPay
-			options
-			;;
-		"d")
-			prod=B4U
 			options
 			;;
 		"z")

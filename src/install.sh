@@ -151,6 +151,17 @@ then
 			echo ""
 			echo "Maestro Host: "
 			read maestrohost
+		else
+			echo ""
+			echo "Maestro Host: "$maestrohost
+			echo "Maestro Host está correto? [Y/n]"
+			read maestrohostconfirm
+			if [[ $maestrohostconfirm == "n" ]]
+			then
+				echo ""
+				echo "Maestro Host: "
+				read maestrohost
+			fi
 		fi
 
 		if [ -z $maestrotoken ]
@@ -170,6 +181,7 @@ then
 				echo "Maestro Token: "
 				read maestrotoken
 				
+				echo "php artisan maestro:config "$maestrohost" "$maestrotoken
 				php artisan maestro:config $maestrohost $maestrotoken
 				php artisan maestro:register
 			fi
@@ -216,7 +228,23 @@ then
 		sudo ln -s /etc/nginx/sites-available/dev.$folder.allapi.io.conf /etc/nginx/sites-enabled/
 	fi
 
-	sudo sed -i -e 's/127.0.0.1    dev.${folder}.allapi.io//g' /etc/hosts
+
+
+	echo ""
+	echo ""
+	cat /etc/hosts
+	echo ""
+	echo ""
+	sleep 2
+	while read line; do
+		if [ $line = "127.0.0.1    dev.${folder}.allapi.io" ]
+		then
+	    	echo ${line//$line/""}
+	    else
+	    	echo $line
+	    fi
+	done < /etc/hosts > /etc/hosts.t
+	mv /etc/hosts{.t,}
 
 	sudo sed -i '/^[[:space:]]*$/d' /etc/hosts
 
@@ -227,6 +255,13 @@ then
 	echo ""
 	echo "Nginx Status"
 	sudo nginx -t
+
+	echo ""
+	echo ""
+	cat /etc/hosts
+	echo ""
+	echo ""
+	sleep 2
 
 	echo ""
 	echo "Nginx Reload"
