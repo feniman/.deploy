@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+echo $project/$folder
+sleep 1
+
 if [ ! -d $HOME/code ]
 then
 	echo ""
@@ -37,30 +40,41 @@ fi
 
 cd $pathProj/$folder
 
-if [ -d $pathProj/$folder/public ]
+if [ $type != "sl" ]
 then
-
-	if [ ! -d $pathProj/$folder/vendor ]
+	if [ $type != "front" ]
 	then
-		echo ""
-		echo "Composer"
-		composer update -vvv
-	else
-		read -p comp "Execute composer? [y/n]: "
-		if [ $comp == "y" ]
+		if [ -d $pathProj/$folder/public ]
 		then
-			echo ""
-			echo "Composer"
-			composer update -vvv
+
+			if [ ! -d $pathProj/$folder/vendor ]
+			then
+				echo ""
+				echo "Composer"
+				composer update -vvv
+			else
+				echo ""
+				echo "Execute composer? [y/n]: "
+				echo ""
+				read comp
+				if [ $comp = "y" ]
+				then
+					echo ""
+					echo "Composer"
+					composer update -vvv
+				fi
+			fi
+
+			sudo chmod 777 $pathProj/$folder/storage -R
+			sudo chown nginx:nginx $pathProj/$folder/storage -R
+
+			if [ $type = "l1" ]
+			then
+				echo ""
+				echo "Create Database"
+				echo "CREATE DATABASE ${folder} CHARACTER SET utf8 COLLATE utf8_unicode_ci;" | mysql -u root -p
+			fi
 		fi
-	fi
-
-
-	if [ $type = "l1" ]
-	then
-		echo ""
-		echo "Create Database"
-		echo "CREATE DATABASE ${folder} CHARACTER SET utf8 COLLATE utf8_unicode_ci;" | mysql -u root -p
 	fi
 
 	if [ ! -f $pathProj/.env ]
@@ -70,86 +84,122 @@ then
 		cp .env.example .env
 	fi
 
-	while read line; do
-	
-		substr=$(echo $line| cut -d'=' -f 1)
+	echo "APP_URL="$APP_URL
+	echo "DB_HOST="$DB_HOST
+	echo "DB_PORT="$DB_PORT
+	echo "DB_DATABASE="$DB_DATABASE
+	echo "DB_USERNAME="$DB_USERNAME
+	echo "DB_PASSWORD="$DB_PASSWORD
 
-		if [ ! -z $substr ]
-		then
-			if [ $substr = "APP_URL" ]
+	sleep 2
+
+	if [ $type != "front" ]
+	then
+
+		while read line; do
+		
+			substr=$(echo $line| cut -d'=' -f 1)
+
+			if [ ! -z $substr ]
 			then
-		    	echo ${line//$line/"APP_URL="$APP_URL}
-		    elif [ $substr = "DB_HOST" ]
-			then
-		    	echo ${line//$line/"DB_HOST="$DB_HOST}
-			elif [ $substr = "DB_PORT" ]
-			then
-		    	echo ${line//$line/"DB_PORT="$DB_PORT}
-		    elif [ $substr = "DB_DATABASE" ]
-			then
-		    	echo ${line//$line/"DB_DATABASE="$DB_DATABASE}
-		    elif [ $substr = "DB_USERNAME" ]
-			then
-		    	echo ${line//$line/"DB_USERNAME="$DB_USERNAME}
-		    elif [ $substr = "DB_PASSWORD" ]
-			then
-		    	echo ${line//$line/"DB_PASSWORD="$DB_PASSWORD}
-		    else
+				if [ $substr = "APP_URL" ]
+				then
+			    	echo ${line//$line/"APP_URL="$APP_URL}
+			    elif [ $substr = "DB_HOST" ]
+				then
+			    	echo ${line//$line/"DB_HOST="$DB_HOST}
+				elif [ $substr = "DB_PORT" ]
+				then
+			    	echo ${line//$line/"DB_PORT="$DB_PORT}
+			    elif [ $substr = "DB_DATABASE" ]
+				then
+			    	echo ${line//$line/"DB_DATABASE="$DB_DATABASE}
+			    elif [ $substr = "DB_USERNAME" ]
+				then
+			    	echo ${line//$line/"DB_USERNAME="$DB_USERNAME}
+			    elif [ $substr = "DB_PASSWORD" ]
+				then
+			    	echo ${line//$line/"DB_PASSWORD="$DB_PASSWORD}
+			    else
+			    	echo $line
+			    fi
+		    fi
+		    if [ -z $line ]
+		    then
 		    	echo $line
 		    fi
-	    fi
-	    if [ -z $line ]
-	    then
-	    	echo $line
-	    fi
-	done < .env > .env.t
-	mv .env{.t,}
+		done < .env > .env.t
+		mv .env{.t,}
 
-	if [ $type = "l1" ]
-	then
-		php artisan migrate:fresh
-		php artisan db:seed
-	fi
-
-	php artisan key:generate
-
-	php artisan maestro:key --set
-
-	if [ $folder = 'maestro' ]
-	then 
-		maestrohost=$APP_URL
-	fi
-		
-	if [ -z $maestrohost ]
-	then
-		echo ""
-		echo "Maestro Host: "
-		read maestrohost
-	fi
-
-	if [ -z maestrotoken ]
-	then
-		if [ $folder != 'maestro' ]
-		then 
-			cd ~/code/maestro
-			php artisan maestro:token
-			cd $pathProj/$folder
+		if [ $type = "l1" ]
+		then
+			php artisan migrate:fresh
+			php artisan db:seed
 		fi
-		echo ""
-		echo "Maestro Token: "
-		read maestrotoken
-		
-		php artisan maestro:config maestrohost maestrotoken
-		
-		php artisan maestro:register
+
+		php artisan key:generate
+
+		php artisan maestro:key --set
+
+		if [ $folder = 'maestro' ]
+		then 
+			maestrohost=$APP_URL
+		fi
+			
+		if [ -z $maestrohost ]
+		then
+			echo ""
+			echo "Maestro Host: "
+			read maestrohost
+		fi
+
+		if [ -z $maestrotoken ]
+		then
+			if [ $folder != 'maestro' ]
+			then 
+				cd ~/code/maestro
+
+
+
+				echo ""
+				echo "Current Maestro Token: "
+				php artisan maestro:token
+				
+				cd $pathProj/$folder
+				echo ""
+				echo "Maestro Token: "
+				read maestrotoken
+				
+				php artisan maestro:config $maestrohost $maestrotoken
+				php artisan maestro:register
+			fi
+
+
+		else
+			if [ $folder != 'maestro' ]
+			then 
+				php artisan maestro:config $maestrohost $maestrotoken
+				php artisan maestro:register
+			fi
+			
+		fi
 	fi
 
-
-	if [ ! -h /var/www/html/$folder ]
+	if [ $folder = "maestro" ]
 	then
-		echo ""
-		echo "Link ~/code/${folder} in /var/www/html/"
-		sudo ln -s $pathProj /var/www/html/
+		if [ ! -h $pathProj/$folder ]
+		then
+			echo ""
+			echo "Link "$pathProj/$folder" in /var/www/html/"
+			sudo ln -s $pathProj/$folder /var/www/html/
+		fi
+	else
+		if [ ! -h $pathProj ]
+		then
+			echo ""
+			echo "Link "$pathProj" in /var/www/html/"
+			sudo ln -s $pathProj /var/www/html/
+		fi
 	fi
 
 	if [ ! -f /etc/nginx/sites-available/dev.$folder.allapi.io.conf ]
@@ -188,8 +238,18 @@ then
 	fi
 fi
 
+if [ $type = "front" ]
+then 
+	echo ""
+	echo "npm install"
+	npm install
+	echo ""
+	echo "npm run generate"
+	npm run generate
+fi
+
 echo ""
 echo "Pressione qualquer tecla para continuar..."
-read asd
+read a
 
 

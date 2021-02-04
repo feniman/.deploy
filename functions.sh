@@ -16,14 +16,16 @@ header()
 
 maestroInstall()
 {
+	clearVariables
 	if [ ! -d $HOME/code/maestro ]
 	then
-		echo "Deseja installar o Maestro? [y/n] "
+		echo "Deseja installar o Maestro? [Y/n] "
 		read maestroInstall
-		if [ $maestroInstall = "y" ]
+		if [ $maestroInstall = "Y" ]
 		then
 			clear
 			header
+			configPath=$HOME/.deploy/repo/maestro
 			source $HOME/.deploy/repo/maestro/.config
 			source $HOME/.deploy/src/install.sh
 		elif [ $maestroInstall != "n" ]
@@ -32,10 +34,112 @@ maestroInstall()
 			header
 			maestroInstall
 		fi
-	fi	
+	fi
+}
+
+maestroUninstall()
+{
+	clearVariables
+	if [ -d $HOME/code/maestro ]
+	then
+		echo "Deseja desinstallar o Maestro? [Y/n] "
+		read maestroUninstall
+		if [ $maestroUninstall = "Y" ]
+		then
+			clear
+			header
+			configPath=$HOME/.deploy/repo/maestro/
+			source $HOME/.deploy/repo/maestro/.config
+			source $HOME/.deploy/src/uninstall.sh
+		elif [ $maestroUninstall != "n" ]
+		then
+			clear
+			header
+			maestroUninstall
+		else
+			menuProd
+		fi
+	fi
+}
+
+options()
+{
+	clear
+
+	header
+
+	echo ""
+	echo "O que você deseja fazer?"
+
+	echo ""
+	echo " [a] Instalar"
+	echo " [b] Deploy Local"
+	echo " [c] Deploy Produção"
+	echo " [d] Desinstalar"
+
+	echo ""
+	read o
+
+	case $o in
+		"a")
+			install
+			;;
+		"b")
+			echo "Essa opção ainda não implementada"
+			sleep 1
+			;;
+		"c")
+			echo "Essa opção ainda não implementada"
+			sleep 1
+			;;
+		"d")
+			echo "Tem certeza que deseja desinstalar todos os repositórios desse projeto? [Y/n]"
+			echo ""
+			read confirm
+			if [ $confirm = "Y" ]
+			then
+				uninstall
+			elif [ $confirm = "n" ]
+			then
+				echo ""
+				echo "Nenhuma ação foi realizada"
+				sleep 1
+			else
+				echo ""
+				echo "Opção inválida"
+				echo ""
+				sleep 1
+				options
+			fi
+			;;
+		* )
+			echo ""
+			echo "Opção inválida"
+			echo ""
+			sleep 1
+			options
+			;;
+	esac
+
+	menuProd
+}
+
+clearVariables()
+{
+	unset prod
+	unset project
+	unset folder
+	unset option
+	unset maestroOp
+	unset maestrotoken
+	unset configPath
+	unset pathProj
+	unset DB_DATABASE
 }
 
 menuProd(){
+
+	clearVariables
 
 	clear
 
@@ -44,16 +148,44 @@ menuProd(){
 	echo ""
 	echo "Escolha um produto: "
 	echo ""
-	echo " [a] InfinityPay"
-	echo " [b] B4U"
+	echo " [a] Maestro"
+	echo " [b] Global"
+	echo " [c] InfinityPay"
+	echo " [d] B4U"
+	echo ""
+	echo " [z] Sair"
 
 	echo ""
 	read option
 
 	case $option in
 		"a")
+			prod=Maestro
+			clear
+			header
+			if [ -d $HOME/code/maestro ]
+			then
+				maestroUninstall
+				menuProd
+			else	
+				maestroInstall
+				menuProd
+			fi
+			;;
+		"b")
+			prod=Global
+			options
+			;;
+		"c")
 			prod=InfinityPay
-			install
+			options
+			;;
+		"d")
+			prod=B4U
+			options
+			;;
+		"z")
+			return 1
 			;;
 		* )
 			echo "Opção inválida"
@@ -73,4 +205,29 @@ install()
 	 	source ~/.deploy/src/install.sh
 
 	done
+}
+
+uninstall()
+{
+	for entry in $HOME/.deploy/repo/$prod/*
+	do
+		configPath=$entry
+	 	source $configPath/.config
+	 	source ~/.deploy/src/uninstall.sh
+	done
+
+	if [ -h /var/www/html/${project} ]
+	then
+		echo ""
+		echo "chown $USER:$GROUP /var/www/html/${project} -R"
+		sudo chown $USER:$GROUP /var/www/html/${project} -R
+
+		echo ""
+		echo "Remove /var/www/html/${project}"
+		sudo rm /var/www/html/${project} -rf
+	fi
+	if [ -d ~/code/${project} ]
+	then
+		rm -rf ~/code/${project}
+	fi
 }
