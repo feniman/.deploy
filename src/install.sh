@@ -23,8 +23,11 @@ fi
 
 if [ ! -z ${project+x} ]
 then
-	echo "Creating "$HOME"/code/"$project
-	mkdir $HOME/code/$project
+	if [ ! -d $HOME"/code/"$project ]
+	then
+		echo "Creating "$HOME"/code/"$project
+		mkdir $HOME/code/$project
+	fi
 	pathProj=$HOME/code/$project
 else
 	pathProj=$HOME/code
@@ -36,9 +39,15 @@ if [ ! -d $pathProj/$folder ]
 then
 	echo ""
 	git clone $repo
+	cd $pathProj/$folder
+else
+	cd $pathProj/$folder
+	echo ""
+	echo "git pull"
+	git pull
 fi
 
-cd $pathProj/$folder
+git config core.fileMode false
 
 if [ $type != "sl" ]
 then
@@ -72,7 +81,8 @@ then
 			then
 				echo ""
 				echo "Create Database"
-				echo "CREATE DATABASE ${folder} CHARACTER SET utf8 COLLATE utf8_unicode_ci;" | mysql -u root -p
+#				echo "CREATE DATABASE ${folder} CHARACTER SET utf8 COLLATE utf8_unicode_ci;" | mysql -u root -p "root"
+				echo "CREATE DATABASE ${folder} CHARACTER SET utf8 COLLATE utf8_unicode_ci;" | mysql --defaults-extra-file=$HOME/.mysql-defaults-extra-file
 			fi
 		fi
 	fi
@@ -99,37 +109,57 @@ then
 		while read line; do
 		
 			substr=$(echo $line| cut -d'=' -f 1)
+			substrServer=$(echo $line| cut -d'_' -f 1)
 
 			if [ ! -z $substr ]
 			then
 				if [ $substr = "APP_URL" ]
 				then
-			    	echo ${line//$line/"APP_URL="$APP_URL}
-			    elif [ $substr = "DB_HOST" ]
+					echo ${line//$line/"APP_URL="$APP_URL}
+				elif [ $substr = "DB_HOST" ]
 				then
-			    	echo ${line//$line/"DB_HOST="$DB_HOST}
+					echo ${line//$line/"DB_HOST="$DB_HOST}
 				elif [ $substr = "DB_PORT" ]
 				then
-			    	echo ${line//$line/"DB_PORT="$DB_PORT}
-			    elif [ $substr = "DB_DATABASE" ]
+					echo ${line//$line/"DB_PORT="$DB_PORT}
+				elif [ $substr = "DB_DATABASE" ]
 				then
-			    	echo ${line//$line/"DB_DATABASE="$DB_DATABASE}
-			    elif [ $substr = "DB_USERNAME" ]
+					echo ${line//$line/"DB_DATABASE="$DB_DATABASE}
+				elif [ $substr = "DB_USERNAME" ]
 				then
-			    	echo ${line//$line/"DB_USERNAME="$DB_USERNAME}
-			    elif [ $substr = "DB_PASSWORD" ]
+					echo ${line//$line/"DB_USERNAME="$DB_USERNAME}
+				elif [ $substr = "DB_PASSWORD" ]
 				then
-			    	echo ${line//$line/"DB_PASSWORD="$DB_PASSWORD}
-			    else
-			    	echo $line
-			    fi
-		    fi
-		    if [ -z $line ]
-		    then
-		    	echo $line
-		    fi
+					echo ${line//$line/"DB_PASSWORD="$DB_PASSWORD}
+				elif [ $substrServer = "SERVICE" ]
+				then
+					echo ${line//$line/"SRV"}
+				else
+					echo $line
+				fi
+				
+			fi
+			if [ -z $line ]
+			then
+				echo $line
+			fi
 		done < .env > .env.t
 		mv .env{.t,}
+
+		sudo sed -i '/SRV/d' .env
+		echo "SERVICE_L1_ACCOUNTS="$SERVICE_L1_ACCOUNTS | sudo tee -a .env
+		echo "SERVICE_L1_AUTH="$SERVICE_L1_AUTH | sudo tee -a .env
+		echo "SERVICE_L1_BANKSLIP="$SERVICE_L1_BANKSLIP | sudo tee -a .env
+		echo "SERVICE_L1_CARDS="$SERVICE_L1_CARDS | sudo tee -a .env
+		echo "SERVICE_L1_COMPANIES="$SERVICE_L1_COMPANIES | sudo tee -a .env
+		echo "SERVICE_L1_CUSTOMERS="$SERVICE_L1_CUSTOMERS | sudo tee -a .env
+		echo "SERVICE_L1_LOGS="$SERVICE_L1_LOGS | sudo tee -a .env
+		echo "SERVICE_L1_PERSONS="$SERVICE_L1_PERSONS | sudo tee -a .env
+		echo "SERVICE_L1_PRODUCTS="$SERVICE_L1_PRODUCTS | sudo tee -a .env
+		echo "SERVICE_L1_SUPPLIES="$SERVICE_L1_SUPPLIES | sudo tee -a .env
+		echo "SERVICE_L1_TRANSACTIONS="$SERVICE_L1_TRANSACTIONS | sudo tee -a .env
+		echo "SERVICE_L2_INPAY="$SERVICE_L2_INPAY | sudo tee -a .env
+		echo "SERVICE_L2_GLOBAL="$SERVICE_L2_GLOBAL | sudo tee -a .env
 
 		if [ $type = "l1" ]
 		then
@@ -154,7 +184,7 @@ then
 		else
 			echo ""
 			echo "Maestro Host: "$maestrohost
-			echo "Maestro Host está correto? [Y/n]"
+			echo "Maestro Host está correto? [y/n] (Press Enter to y)"
 			read maestrohostconfirm
 			if [[ $maestrohostconfirm == "n" ]]
 			then
@@ -170,8 +200,6 @@ then
 			then 
 				cd ~/code/maestro
 
-
-
 				echo ""
 				echo "Current Maestro Token: "
 				php artisan maestro:token
@@ -185,8 +213,6 @@ then
 				php artisan maestro:config $maestrohost $maestrotoken
 				php artisan maestro:register
 			fi
-
-
 		else
 			if [ $folder != 'maestro' ]
 			then 
@@ -236,21 +262,30 @@ then
 	echo ""
 	echo ""
 	sleep 2
+
+	sudo cp /etc/hosts ~/code
+
+	sudo chmod 777 ~/code/hosts
+
 	while read line; do
 		if [ $line = "127.0.0.1    dev.${folder}.allapi.io" ]
 		then
-	    	echo ${line//$line/""}
-	    else
-	    	echo $line
-	    fi
-	done < /etc/hosts > /etc/hosts.t
-	mv /etc/hosts{.t,}
+			sudo echo ${line//$line/""}
+		else
+			sudo echo $line
+		fi
+	done < ~/code/hosts > ~/code/hosts.t
+	mv ~/code/hosts{.t,}
 
-	sudo sed -i '/^[[:space:]]*$/d' /etc/hosts
+	sudo sed -i '/^[[:space:]]*$/d' ~/code/hosts
 
 	echo ""
-	echo "Set /etc/hosts"
-	echo "127.0.0.1    dev.${folder}.allapi.io" | sudo tee -a /etc/hosts
+	echo "Set ~/code/hosts"
+	echo "127.0.0.1    dev.${folder}.allapi.io" | sudo tee -a ~/code/hosts
+
+	sudo cp ~/code/hosts /etc/hosts -f
+
+	sudo rm ~/code/hosts
 
 	echo ""
 	echo "Nginx Status"

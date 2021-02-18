@@ -5,6 +5,8 @@ source $HOME/.deploy/.formatting
 
 source $HOME/.deploy/functions.sh
 
+setMysqlParams
+
 prod=""
 
 clear

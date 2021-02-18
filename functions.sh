@@ -237,3 +237,15 @@ uninstall()
 		rm -rf ~/code/${project}
 	fi
 }
+
+setMysqlParams()
+{
+	if [ ! -d $HOME/.mysql-defaults-extra-file ]
+	then
+		cat <<EOF >$HOME/.mysql-defaults-extra-file
+[client]
+user=$DB_USERNAME
+password=$DB_PASSWORD
+EOF
+	fi
+}
