@@ -50,7 +50,7 @@ then
 	then
 		echo ""
 		echo "Drop Database"
-		echo "DROP DATABASE ${folder};" | mysql -u root -p
+		echo "DROP DATABASE ${folder};" | mysql --defaults-extra-file=$HOME/.mysql-defaults-extra-file
 	fi
 
 	if [ -h /etc/nginx/sites-enabled/dev.${folder}.allapi.io.conf ]
